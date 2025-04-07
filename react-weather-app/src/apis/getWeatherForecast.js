@@ -1,31 +1,35 @@
 import jQuery from "jquery";
-import {db} from "./../backend/app_backend";
+import { db } from "./../backend/app_backend";
+import { WEATHER_API_KEY, WEATHER_BASE_URL } from "./config";
+import { handleApiError } from "./utils";
 
-
-
-export const getWeatherForecast = () =>{
-    jQuery(($)=>{
-        $.noConflict();
-        const $API_KEY = "cd34f692e856e493bd936095b256b337";
-        $.ajax({
-            url:`https://api.openweathermap.org/data/2.5/forecast?q=Nigeria&appid=${$API_KEY}`,
-            success: (result, status, xhr) =>{
-                if(result.cod == 200)
-                {
-                   //console.log(result);
-                   return result;
-                }
-
-               
-            },
-    
-
-            error: (xhr, status, error) =>{
-                console.log(error);
-            }
-        });
-    
-    
-    })
-    
-}
+/**
+ * Get weather forecast data
+ * @param {string} location - Optional location (defaults to "Nigeria" if not provided)
+ * @returns {Promise} - Promise that resolves with the forecast data
+ */
+export const getWeatherForecast = (location = "Nigeria") => {
+  return new Promise((resolve, reject) => {
+    jQuery(($) => {
+      $.noConflict();
+      
+      $.ajax({
+        url: `${WEATHER_BASE_URL}/forecast?q=${location}&appid=${WEATHER_API_KEY}`,
+        success: (result, status, xhr) => {
+          if (result.cod == 200) {
+            // Store forecast data in local storage for offline use
+            db.create("FORECAST_DATA", JSON.stringify(result));
+            resolve(result);
+          } else {
+            reject(new Error("Invalid response from forecast API"));
+          }
+        },
+        error: (xhr, status, error) => {
+          console.log(error);
+          handleApiError(error);
+          reject(error);
+        }
+      });
+    });
+  });
+};
