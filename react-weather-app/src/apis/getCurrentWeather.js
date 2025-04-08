@@ -2,6 +2,21 @@ import jQuery from "jquery";
 import { db } from "../backend/app_backend";
 import { getCurrentDate } from "../inc/scripts/utilities";
 import Swal from "sweetalert2";
+import { getWeatherIcon } from "./weatherIcons";
+import { 
+	WEATHER_API_KEY, 
+	WEATHER_BASE_URL, 
+	CITY_API_URL, 
+	NINJA_API_KEY, 
+	ERROR_MESSAGES 
+} from "./config";
+import { 
+	closeUtilityComponent, 
+	scrollToElement, 
+	checkWeatherUnitDeg, 
+	showToast, 
+	handleApiError 
+} from "./utils";
 import Thunder from "./../assets/static/thunder.svg";
 import Day from "./../assets/static/day.svg";
 import Drizzle from "./../assets/static/rainy-5.svg";
@@ -15,152 +30,132 @@ import ScatteredClouds from "./../assets/static/scattered-clouds.svg";
 import FewClouds from "./../assets/static/few-clouds.svg";
 import Haze from "./../assets/static/haze.svg";
 
-export const closeUtilityComponent = () => {
-	jQuery(($) => {
-		$.noConflict();
-		$(".cmp").addClass("d-none");
-		$(".utility-component").removeClass("add-utility-component-height");
-	});
-};
-export const API_KEY = "cd34f692e856e493bd936095b256b337";
-
+// Use weather unit from DB or default to metric
 export const WEATHER_UNIT = db.get("WEATHER_UNIT") || "metric";
 
-export const scrollToElement = (elementId) => {
-	document
-		.getElementById(`${elementId}`)
-		.scrollIntoView({ behaviour: "smooth" });
-};
-
-export const checkWeatherUnitDeg = () => {
-	let result;
-	if (db.get("WEATHER_UNIT")) {
-		switch (db.get("WEATHER_UNIT")) {
-			case "celsius":
-				result = "c";
-				break;
-
-			case "farenheit":
-				result = "f";
-				break;
-
-			case "kelvin":
-				result = "k";
-				break;
-
-			default:
-				result = "c";
-		}
-	} else {
-		//the weather unit it celsius if not defined
-		db.create("WEATHER_UNIT", "celsius");
-		result = "c";
-	}
-
-	return result;
-};
-
+/**
+ * Handle weather search form submission
+ * @param {Event} e - The form event
+ * @param {string} search - Optional search term
+ */
 export const handleWeatherForm = (e, search) => {
 	e.preventDefault();
 
 	if (db.get("TRACK_SAVED_LOCATION_WEATHER") == "false") {
-		Swal.fire({
-			text: "Changes settings to track default location",
-			icon: "info",
-			timer: 1500,
-			toast: true,
-			showConfirmButton: false,
-			position: "top",
-		}).then((willProceed) => {
+		showToast(ERROR_MESSAGES.LOCATION_TRACKING).then(() => {
 			scrollToElement("weatherContainer");
 		});
 	}
 
 	let userSearch = jQuery("#searchWeather").val() || search;
-
 	getCurrentWeather(userSearch.trim());
-
 	scrollToElement("weatherContainer");
-	jQuery(($) => {
-		$("#searchWeather").val("");
-	});
+	
+	jQuery("#searchWeather").val("");
 };
 
-export const findCity = (searchTerm,updateDataArray)=> {
+/**
+ * Find city by search term
+ * @param {string} searchTerm - The city to search for
+ * @param {Function} updateDataArray - Callback to update data
+ */
+export const findCity = (searchTerm, updateDataArray) => {
 	if (db.get("TRACK_SAVED_LOCATION_WEATHER") == "false") {
-		Swal.fire({
-			text: "Changes settings to track default location",
-			icon: "info",
-			timer: 1500,
-			toast: true,
-			showConfirmButton: false,
-			position: "top",
-		}).then((willProceed) => {
+		showToast(ERROR_MESSAGES.LOCATION_TRACKING).then(() => {
 			scrollToElement("weatherContainer");
 		});
 	}
-	const XAPIKEY = "lNhOELJHDMrwCwm40hFvwA==teZv2EboEGJfonOC";
-	jQuery(($)=>{
-		console.log("Ajax sent")
+	
+	jQuery(($) => {
+		console.log("Ajax sent");
 		$.ajax({
-			url: `https://api.api-ninjas.com/v1/city?name=${searchTerm}&limit=4`,
+			url: `${CITY_API_URL}?name=${searchTerm}&limit=4`,
 			processData: false,
-
 			headers: {
-				'X-Api-Key':XAPIKEY
+				'X-Api-Key': NINJA_API_KEY
 			},
 			success: (result, status, xhr) => {
 				if (xhr.status != 200) {
-					Swal.fire({
-						toast: true,
-						position: "top",
-						text: "Something went wrong!",
-						icon: "info",
-						showConfirmButton: false,
-						timer: 1000,
-					});
+					showToast(ERROR_MESSAGES.GENERAL_ERROR);
 				} else {
-					//check if the API returned a legit response
-					console.log(result)
-					updateDataArray(result)
+					console.log(result);
+					updateDataArray(result);
 				}
 			},
 			error: (xhr, status, error) => {
-				$("#searchWeather").val(" ");
-				closeUtilityComponent();
-				console.log("Error")
+				handleApiError(error, () => {
+					scrollToElement("weatherContainer");
+				});
+			},
+		});
+	});
+};
 
-				//check if the error is empty
-				if (error == "") {
-					Swal.fire({
-						toast: true,
-						text: "Network Error!",
-						icon: "info",
-						timer: 1000,
-						position: "top",
-						showConfirmButton: false,
-					}).then((willProceed) => {
-						//scroll to top when the promise is resolved!
-						scrollToElement("weatherContainer");
-					});
-				} else {
-					Swal.fire({
-						toast: true,
-						text: error,
-						icon: "warning",
-						timer: 1000,
-						position: "top",
-						showConfirmButton: false,
-					}).then((willProceed) => {
-						//scroll to top when the promise is resolved!
-						scrollToElement("weatherContainer");
-					});
+/**
+ * Update the DOM with weather data
+ * @param {Object} result - Weather data from API
+ */
+export const updateReactDom = (result) => {
+	jQuery(($) => {
+		$.noConflict();
+		$("#searchWeather").val(" ");
+		closeUtilityComponent();
+		scrollToElement("weatherContainer");
+		
+		// Update UI elements
+		$("#weatherLocation").html(`${result.name} ${result.sys.country}`);
+		$("#currentDeg").html(Math.ceil(result.main.temp));
+		$("#weatherDes").html(result.weather[0].description);
+		$("#currentDate").html(getCurrentDate());
+		
+		// Get the correct weather icon
+		const weatherIcon = getWeatherIcon(result.weather[0].id);
+		$("#main-weather-icon-container").html(
+			`<img src=${weatherIcon} alt="main-weather-icon" width="64" height="64"/>`
+		);
+		
+		// Update sub weather components
+		$("#wind-value").html(`${result.wind.speed} m/s`);
+		$("#humidity-value").html(`${result.main.humidity} %`);
+		$("#pressure-value").html(`${result.main.pressure} hPa`);
+		
+		// Store data for offline caching
+		db.create("WEATHER_LOCATION", `${result.name} ${result.sys.country}`);
+		db.create("WEATHER_DEG", result.main.temp);
+		db.create("WEATHER_DESCRIPTION", result.weather[0].description);
+		db.create("WEATHER_CODE", result.weather[0].id);
+		db.create("SUB_WEATHER_WIND_VALUE", `${result.wind.speed} m/s`);
+		db.create("SUB_WEATHER_HUMIDITY_VALUE", `${result.main.humidity} %`);
+		db.create("SUB_WEATHER_PRESSURE_VALUE", `${result.main.pressure} hPa`);
+	});
+};
+
+/**
+ * Get current weather for a location
+ * @param {string} location - Location to get weather for
+ */
+export const getCurrentWeather = (location) => {
+	jQuery(($) => {
+		const SEARCH_URL = `${WEATHER_BASE_URL}/weather?q=${location}&appid=${WEATHER_API_KEY}&units=${WEATHER_UNIT}`;
+
+		$.ajax({
+			url: SEARCH_URL,
+			processData: false,
+			success: (result, status, xhr) => {
+				if (xhr.status != 200) {
+					showToast(ERROR_MESSAGES.GENERAL_ERROR);
+				} else if (result.cod === 200) {
+					updateReactDom(result);
 				}
 			},
-		})
-
-	})
-}
+			error: (xhr, status, error) => {
+				handleApiError(error, () => {
+					scrollToElement("weatherContainer");
+				});
+			},
+		});
+	});
+};
 
 //function to determine custom icon packs to use
 export let weatherSvg;
@@ -203,94 +198,4 @@ export const checkWeatherCode = (code) => {
 	}
 
 	return weatherSvg;
-};
-
-export const updateReactDom = (result) => {
-	jQuery(($) => {
-		$.noConflict();
-		$("#searchWeather").val(" ");
-		closeUtilityComponent();
-		scrollToElement("weatherContainer");
-		$("#weatherLocation").html(`${result.name} ${result.sys.country}`);
-		$("#currentDeg").html(Math.ceil(result.main.temp));
-		$("#weatherDes").html(result.weather[0].description);
-		$("#currentDate").html(getCurrentDate());
-		checkWeatherCode(result.weather[0].id);
-		$("#main-weather-icon-container").html(
-			`<img src=${weatherSvg} alt="main-weather-icon" width="64" height="64"/>`
-		);
-		//sub weather components 
-		$("#wind-value").html(`${result.wind.speed} m/s` );
-		$("#humidity-value").html(`${result.main.humidity} %`);
-		$("#pressure-value").html(`${result.main.pressure} hPa`)
-		//create the database values for offline caching
-		db.create("WEATHER_LOCATION", `${result.name} ${result.sys.country}`);
-		db.create("WEATHER_DEG", result.main.temp);
-		db.create("WEATHER_DESCRIPTION", result.weather[0].description);
-		db.create("WEATHER_CODE", result.weather[0].id);
-		db.create("SUB_WEATHER_WIND_VALUE", `${result.wind.speed} m/s`);
-		db.create("SUB_WEATHER_HUMIDITY_VALUE", `${result.main.humidity} %`);
-		db.create("SUB_WEATHER_PRESSURE_VALUE", `${result.main.pressure} hPa`);
-	});
-};
-export const getCurrentWeather = (location) => {
-	jQuery(($) => {
-		let userSearch = location;
-
-		const SEARCH_URL = `https://api.openweathermap.org/data/2.5/weather?q=${userSearch}&appid=${API_KEY}&units=${WEATHER_UNIT}`;
-
-		$.ajax({
-			url: SEARCH_URL,
-			processData: false,
-			success: (result, status, xhr) => {
-				if (xhr.status != 200) {
-					Swal.fire({
-						toast: true,
-						position: "top",
-						text: "Something went wrong!",
-						icon: "info",
-						showConfirmButton: false,
-						timer: 1000,
-					});
-				} else {
-					//check if the API returned a legit response
-					if (result.cod === 200) {
-						
-						updateReactDom(result);
-					}
-				}
-			},
-			error: (xhr, status, error) => {
-				$("#searchWeather").val(" ");
-				closeUtilityComponent();
-
-				//check if the error is empty
-				if (error == "") {
-					Swal.fire({
-						toast: true,
-						text: "Network Error!",
-						icon: "info",
-						timer: 1000,
-						position: "top",
-						showConfirmButton: false,
-					}).then((willProceed) => {
-						//scroll to top when the promise is resolved!
-						scrollToElement("weatherContainer");
-					});
-				} else {
-					Swal.fire({
-						toast: true,
-						text: error,
-						icon: "warning",
-						timer: 1000,
-						position: "top",
-						showConfirmButton: false,
-					}).then((willProceed) => {
-						//scroll to top when the promise is resolved!
-						scrollToElement("weatherContainer");
-					});
-				}
-			},
-		});
-	});
 };
