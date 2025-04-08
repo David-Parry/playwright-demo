@@ -231,8 +231,13 @@ export const updateReactDom = (result) => {
 		const sunsetTime = new Date(result.sys.sunset * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 		$("#sunrise-sunset-value").html(`${sunriseTime} / ${sunsetTime}`);
 
-		// Get UV index from One Call API
-		getUVIndex(result.coord.lat, result.coord.lon);
+  // Get UV index from One Call API if coordinates are available
+  if (result.coord && result.coord.lat && result.coord.lon) {
+    getUVIndex(result.coord.lat, result.coord.lon);
+  } else {
+    console.log("Missing coordinates for UV index");
+    $("#uv-index-value").html("N/A");
+  }
 
 		//create the database values for offline caching
 		db.create("WEATHER_LOCATION", `${result.name} ${result.sys.country}`);
