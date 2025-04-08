@@ -21,6 +21,10 @@ import { db } from "../backend/app_backend";
 import HumidityIcon from "./../assets/humidity-icon.svg";
 import WindIcon from "./../assets/wind-icon.svg";
 import PressureIcon from "./../assets/pressure-icon.svg";
+import VisibilityIcon from "./../assets/visibility-icon.svg";
+import UVIcon from "./../assets/uv-icon.svg";
+import FeelsLikeIcon from "./../assets/feels-like-icon.svg";
+import SunriseSunsetIcon from "./../assets/sunrise-sunset-icon.svg";
 const WeatherMain = (props) => {
 	const navigateHome = () => {
 		navigate("/weather");
@@ -86,7 +90,8 @@ const WeatherMain = (props) => {
 						{db.get("WEATHER_DESCRIPTION") || "clear sky"}
 					</p>
 				</section>
-				<section className=" rounded-3 shadow my-5 py-2 current-weather-assets brand-tertiary-color d-flex align-items-center justify-content-around">
+				<section className=" rounded-3 shadow my-5 py-2 current-weather-assets brand-tertiary-color d-flex align-items-center justify-content-around flex-wrap">
+					{/* First row of metrics */}
 					<section className="current-weather-wind-speed d-flex flex-column align-items-center justify-content-center">
 						<section className="wind-icon py-1">
 							<img src={WindIcon} height={"30"} width={"30"} alt="wind-icon" />
@@ -116,7 +121,7 @@ const WeatherMain = (props) => {
 							{db.get("SUB_WEATHER_HUMIDITY_VALUE") || "98%"}
 						</p>
 						<p className="m-0 humidity-text text-muted text-capitalize text-center brand-small-text-2 weather-text">
-							humidity
+							Humidity
 						</p>
 					</section>
 
@@ -126,7 +131,7 @@ const WeatherMain = (props) => {
 								src={PressureIcon}
 								height={"30"}
 								width={"30"}
-								alt="rain-icon"
+								alt="pressure-icon"
 							/>
 						</section>
 						<p
@@ -136,6 +141,63 @@ const WeatherMain = (props) => {
 						</p>
 						<p className="m-0 rain-text text-muted text-capitalize text-center brand-small-text-2 weather-text">
 							Pressure
+						</p>
+					</section>
+
+					{/* Second row of metrics */}
+					<section className="current-weather-visibility d-flex flex-column align-items-center justify-content-center mt-3">
+						<section className="visibility-icon py-1">
+							<img src={VisibilityIcon} height={"30"} width={"30"} alt="visibility-icon" />
+						</section>
+						<p
+							className="visibility-value fw-bold text-light brand-small-text text-center py-1 m-0"
+							id="visibility-value">
+							{db.get("SUB_WEATHER_VISIBILITY_VALUE") || "10.0 km"}
+						</p>
+						<p className="m-0 visibility-text text-muted text-capitalize brand-small-text-2 weather-text text-center">
+							Visibility
+						</p>
+					</section>
+
+					<section className="current-weather-uv-index d-flex flex-column align-items-center justify-content-center mt-3">
+						<section className="uv-icon py-1">
+							<img src={UVIcon} height={"30"} width={"30"} alt="uv-icon" />
+						</section>
+						<p
+							className="uv-index-value fw-bold text-light brand-small-text text-center py-1 m-0"
+							id="uv-index-value">
+							{db.get("SUB_WEATHER_UV_INDEX_VALUE") || "N/A"}
+						</p>
+						<p className="m-0 uv-text text-muted text-capitalize brand-small-text-2 weather-text text-center">
+							UV Index
+						</p>
+					</section>
+
+					<section className="current-weather-feels-like d-flex flex-column align-items-center justify-content-center mt-3">
+						<section className="feels-like-icon py-1">
+							<img src={FeelsLikeIcon} height={"30"} width={"30"} alt="feels-like-icon" />
+						</section>
+						<p
+							className="feels-like-value fw-bold text-light brand-small-text text-center py-1 m-0"
+							id="feels-like-value">
+							{db.get("SUB_WEATHER_FEELS_LIKE_VALUE") || "30°"}
+						</p>
+						<p className="m-0 feels-like-text text-muted text-capitalize brand-small-text-2 weather-text text-center">
+							Feels Like
+						</p>
+					</section>
+
+					<section className="current-weather-sunrise-sunset d-flex flex-column align-items-center justify-content-center mt-3">
+						<section className="sunrise-sunset-icon py-1">
+							<img src={SunriseSunsetIcon} height={"30"} width={"30"} alt="sunrise-sunset-icon" />
+						</section>
+						<p
+							className="sunrise-sunset-value fw-bold text-light brand-small-text text-center py-1 m-0"
+							id="sunrise-sunset-value">
+							{db.get("SUB_WEATHER_SUNRISE_SUNSET_VALUE") || "6:00 AM / 6:00 PM"}
+						</p>
+						<p className="m-0 sunrise-sunset-text text-muted text-capitalize brand-small-text-2 weather-text text-center">
+							Sunrise / Sunset
 						</p>
 					</section>
 				</section>

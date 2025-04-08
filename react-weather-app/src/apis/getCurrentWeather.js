@@ -219,10 +219,21 @@ export const updateReactDom = (result) => {
 		$("#main-weather-icon-container").html(
 			`<img src=${weatherSvg} alt="main-weather-icon" width="64" height="64"/>`
 		);
-		//sub weather components 
+		//sub weather components
 		$("#wind-value").html(`${result.wind.speed} m/s` );
 		$("#humidity-value").html(`${result.main.humidity} %`);
-		$("#pressure-value").html(`${result.main.pressure} hPa`)
+		$("#pressure-value").html(`${result.main.pressure} hPa`);
+		$("#visibility-value").html(`${(result.visibility / 1000).toFixed(1)} km`);
+		$("#feels-like-value").html(`${Math.ceil(result.main.feels_like)}°`);
+
+		// Format sunrise and sunset times
+		const sunriseTime = new Date(result.sys.sunrise * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+		const sunsetTime = new Date(result.sys.sunset * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+		$("#sunrise-sunset-value").html(`${sunriseTime} / ${sunsetTime}`);
+
+		// Get UV index from One Call API
+		getUVIndex(result.coord.lat, result.coord.lon);
+
 		//create the database values for offline caching
 		db.create("WEATHER_LOCATION", `${result.name} ${result.sys.country}`);
 		db.create("WEATHER_DEG", result.main.temp);
@@ -231,8 +242,37 @@ export const updateReactDom = (result) => {
 		db.create("SUB_WEATHER_WIND_VALUE", `${result.wind.speed} m/s`);
 		db.create("SUB_WEATHER_HUMIDITY_VALUE", `${result.main.humidity} %`);
 		db.create("SUB_WEATHER_PRESSURE_VALUE", `${result.main.pressure} hPa`);
+		db.create("SUB_WEATHER_VISIBILITY_VALUE", `${(result.visibility / 1000).toFixed(1)} km`);
+		db.create("SUB_WEATHER_FEELS_LIKE_VALUE", `${Math.ceil(result.main.feels_like)}°`);
+		db.create("SUB_WEATHER_SUNRISE_SUNSET_VALUE", `${sunriseTime} / ${sunsetTime}`);
 	});
 };
+export const getUVIndex = (lat, lon) => {
+	jQuery(($) => {
+		$.noConflict();
+
+		const ONE_CALL_URL = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,daily,alerts&appid=${API_KEY}&units=${WEATHER_UNIT}`;
+
+		$.ajax({
+			url: ONE_CALL_URL,
+			processData: false,
+			success: (result, status, xhr) => {
+				if (xhr.status === 200 && result.current && result.current.uvi !== undefined) {
+					const uvIndex = result.current.uvi;
+					$("#uv-index-value").html(uvIndex.toFixed(1));
+					db.create("SUB_WEATHER_UV_INDEX_VALUE", uvIndex.toFixed(1));
+				}
+			},
+			error: (xhr, status, error) => {
+				console.log("Error fetching UV index:", error);
+				// Use a default value or cached value if available
+				const cachedUVIndex = db.get("SUB_WEATHER_UV_INDEX_VALUE") || "N/A";
+				$("#uv-index-value").html(cachedUVIndex);
+			}
+		});
+	});
+};
+
 export const getCurrentWeather = (location) => {
 	jQuery(($) => {
 		let userSearch = location;
@@ -255,7 +295,7 @@ export const getCurrentWeather = (location) => {
 				} else {
 					//check if the API returned a legit response
 					if (result.cod === 200) {
-						
+
 						updateReactDom(result);
 					}
 				}

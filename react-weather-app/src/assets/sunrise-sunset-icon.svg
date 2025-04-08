@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>Sunrise/Sunset</title>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="sunrise-sunset-icon" fill="#FFFFFF" fill-rule="nonzero">
+            <path d="M12,7.5L8,11.5L9.41,12.91L11,11.33L11,16L13,16L13,11.33L14.59,12.91L16,11.5L12,7.5ZM12,2L4,10L5.41,11.41L12,4.83L18.59,11.41L20,10L12,2ZM4,16L4,18L20,18L20,16L4,16ZM4,19L4,21L20,21L20,19L4,19Z" id="Shape"></path>
+        </g>
+    </g>
+</svg>
