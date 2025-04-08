@@ -4,7 +4,7 @@
  */
 
 class Database {
-  constructor() {
+  constructor()
     this.dbName = "weather-app";
 
     this.create = (key, value) => {
