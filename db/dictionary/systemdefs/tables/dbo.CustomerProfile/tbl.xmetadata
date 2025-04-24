@@ -2,7 +2,7 @@
   "id": "34328-4377-56",
   "Isvirtual": false,
   "IsBCP": true,
-  "Ecrypt": false,
+  "Encrypt": false,
   "CustMetaProperties": {
     "name": "AI_Overloards"
   },
