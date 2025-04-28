@@ -1,0 +1,20 @@
+{
+  "TableId": "00000000-0000-0000-0000-000000000001",
+  "IsVirtualTable": false,
+  "Description": "_Content",
+  "ApplyForeignKeys": false,
+  "IsBCP": true,
+  "BCPClause": "",
+  "Comment": "",
+  "Compression": "",
+  "Encrypt": false,
+  "CustomMetadataProperties": {
+    "EEID Where Clause": "",
+    "GDPR Export Alias": "",
+    "Is Load Table": false,
+    "Is Mandatory Audit": false,
+    "Ownership": "Team Owner",
+    "Friendly Name": ""
+  },
+  "HasCustomMetadata": true
+}
