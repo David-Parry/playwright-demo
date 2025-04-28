@@ -1,0 +1,11 @@
+{
+    "UseTransaction": true,
+    "CPU" : ARM64,
+    "IsBCP": true,
+      "Ecrypt": false,
+      "CustMetaProperties": {
+        "name": "Cpu Usage Channel"
+      },
+      "HasCustMetaProperties": true
+
+}
